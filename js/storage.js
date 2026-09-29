@@ -648,6 +648,54 @@ class StorageEngine {
     }
   }
 
+  /* ---------------- Purge / Clear All Data ---------------- */
+  async clearAllData() {
+    this.cache = {
+      tasks: [],
+      employees: [],
+      contracts: [],
+      docs: [],
+      organizations: [],
+      external_contacts: [],
+      risks: [],
+      invest: [],
+      changes: [],
+      raci: [],
+      locks: []
+    };
+
+    try {
+      const db = await this.initIndexedDb();
+      const tx = db.transaction(['virtual_files', 'virtual_library'], 'readwrite');
+      tx.objectStore('virtual_files').clear();
+      tx.objectStore('virtual_library').clear();
+      await new Promise(r => tx.oncomplete = r);
+    } catch (e) {
+      console.warn('Ошибка очистки IndexedDB:', e);
+    }
+
+    if (!this.isVirtualMode && this.dataDirHandle) {
+      for (const [folderName, handle] of Object.entries(this.folders)) {
+        if (handle && handle.values) {
+          try {
+            for await (const entry of handle.values()) {
+              if (entry.kind === 'file') {
+                await handle.removeEntry(entry.name);
+              }
+            }
+          } catch (e) {
+            console.warn(`Не удалось удалить файлы в папке ${folderName}:`, e);
+          }
+        }
+      }
+    }
+
+    localStorage.removeItem('gantt_custom_schedules');
+    localStorage.removeItem('gantt_collapsed_phases');
+
+    this.notify();
+  }
+
   /* ---------------- Seed Demo Data for Executive Work ---------------- */
   async seedDemoData() {
     const demoEmployees = [

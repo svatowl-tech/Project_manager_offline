@@ -32,7 +32,7 @@ class EvmAdvancedModule {
     
     // Project BAC from passport or sum of contract budgets / tasks
     const passport = (window.storage.cache.invest || [])[0] || {};
-    const BAC = passport.bac || 90000000;
+    const BAC = passport.bac || contracts.reduce((acc, c) => acc + (c.sum || 0), 0);
 
     const today = new Date();
     let totalWeight = 0;
@@ -53,7 +53,6 @@ class EvmAdvancedModule {
         if (dDate <= today) {
           plannedWeight += weight;
         } else {
-          // Fraction of plan
           plannedWeight += weight * 0.4;
         }
       } else {
@@ -61,15 +60,15 @@ class EvmAdvancedModule {
       }
     });
 
-    const percentEarned = totalWeight > 0 ? (earnedWeight / totalWeight) : 0.45;
-    const percentPlanned = totalWeight > 0 ? (plannedWeight / totalWeight) : 0.52;
+    const percentEarned = totalWeight > 0 ? (earnedWeight / totalWeight) : 0;
+    const percentPlanned = totalWeight > 0 ? (plannedWeight / totalWeight) : 0;
 
     const EV = Math.round(BAC * percentEarned);
     const PV = Math.round(BAC * percentPlanned);
     
-    // Actual Cost AC from signed contracts / payments or realistic fraction
-    const actualContractSpend = contracts.reduce((acc, c) => acc + (c.sum || 0), 0) * 0.65;
-    const AC = Math.round(actualContractSpend > 0 ? actualContractSpend : (EV * 1.06));
+    // Actual Cost AC from signed contracts
+    const actualContractSpend = contracts.reduce((acc, c) => acc + (c.sum || 0), 0);
+    const AC = Math.round(actualContractSpend);
 
     // Variances
     const CV = EV - AC; // Cost Variance

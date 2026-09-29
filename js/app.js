@@ -134,6 +134,18 @@ class App {
       btnDiag.addEventListener('click', () => this.openDiagnosticsModal());
     }
 
+    // Clear All Data button
+    const btnClear = document.getElementById('btn-clear-all-data');
+    if (btnClear) {
+      btnClear.addEventListener('click', async () => {
+        if (confirm('Вы уверены, что хотите полностью очистить базу данных? Все задачи, договоры, контрагенты и документы будут удалены.')) {
+          await window.storage.clearAllData();
+          this.updateUserSelector();
+          this.showToast('База данных полностью очищена', 'warning');
+        }
+      });
+    }
+
     // Seed Demo Data button
     const btnSeed = document.getElementById('btn-seed-data');
     if (btnSeed) {
@@ -456,19 +468,21 @@ class App {
     if (!userSelect) return;
 
     const { employees = [] } = window.storage.cache;
-    const defaultUsers = [
-      'Соколов В.П. (Руководитель)',
-      'Васильев Д.Н. (Гл. архитектор)',
-      'Смирнова Е.А. (Ведущий аналитик)',
-      'Ковалев М.С. (Инженер-разработчик)'
-    ];
+    const allUsers = new Set();
+    
+    if (window.storage.activeUser) {
+      allUsers.add(window.storage.activeUser);
+    }
 
-    const allUsers = new Set(defaultUsers);
     employees.forEach(e => allUsers.add(`${e.name} (${e.role || 'Сотрудник'})`));
 
+    if (allUsers.size === 0) {
+      allUsers.add('Пользователь не выбран');
+    }
+
     userSelect.innerHTML = Array.from(allUsers).map(u => {
-      const isSelected = u.startsWith(window.storage.activeUser.split(' ')[0]);
-      return `<option value="${u}" ${isSelected ? 'selected' : ''}>${u}</option>`;
+      const isSelected = u === window.storage.activeUser || (window.storage.activeUser && u.startsWith(window.storage.activeUser.split(' ')[0]));
+      return `<option value="${this.escapeHtml(u)}" ${isSelected ? 'selected' : ''}>${this.escapeHtml(u)}</option>`;
     }).join('');
   }
 

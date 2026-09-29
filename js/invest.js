@@ -33,47 +33,47 @@ class InvestModule {
     } else {
       this.passportData = {
         id: 'project_passport',
-        projectName: 'Комплексная модернизация защищенного контура АСУ ТП и перевод на ОС Astra Linux (РП-3)',
-        projectCode: 'ПР-АСУ-2026/01',
-        sponsor: 'АО «Концерн ВКО "Алмаз-Антей"»',
-        curator: 'Соколов В.П.',
-        targetCompletionDate: '2027-12-31',
+        projectName: 'Новый инвестиционный проект',
+        projectCode: 'ПР-2026/01',
+        sponsor: '',
+        curator: window.storage.activeUser || '',
+        targetCompletionDate: '',
         wacc: this.defaultWacc,
-        bac: 90000000,
+        bac: 0,
         stageGates: {
           G1: {
             code: 'Г1',
             name: 'Инициация и концепция',
-            status: 'passed',
-            date: '2025-11-20',
-            decision: 'Одобрено Инвестиционным комитетом',
+            status: 'planned',
+            date: '',
+            decision: '',
             checklist: [
-              { id: 'c1', title: 'Паспорт инвестиционного проекта (ПИП)', required: true, passed: true },
-              { id: 'c2', title: 'Финансово-экономическое обоснование (ФЭО)', required: true, passed: true },
-              { id: 'c3', title: 'Декларация о намерениях сторон', required: true, passed: true }
+              { id: 'c1', title: 'Паспорт инвестиционного проекта (ПИП)', required: true, passed: false },
+              { id: 'c2', title: 'Финансово-экономическое обоснование (ФЭО)', required: true, passed: false },
+              { id: 'c3', title: 'Декларация о намерениях сторон', required: true, passed: false }
             ]
           },
           G2: {
             code: 'Г2',
             name: 'Обоснование инвестиций и ТЗ',
-            status: 'passed',
-            date: '2026-03-15',
-            decision: 'Утверждено Техническим советом',
+            status: 'planned',
+            date: '',
+            decision: '',
             checklist: [
-              { id: 'c4', title: 'Техническое задание по ГОСТ 34.602-2020', required: true, passed: true },
-              { id: 'c5', title: 'Анализ технологической независимости (ТОРП/Минпромторг)', required: true, passed: true },
-              { id: 'c6', title: 'Предварительный сводный сметный расчет (ССР)', required: true, passed: true }
+              { id: 'c4', title: 'Техническое задание по ГОСТ 34.602-2020', required: true, passed: false },
+              { id: 'c5', title: 'Анализ технологической независимости (ТОРП/Минпромторг)', required: true, passed: false },
+              { id: 'c6', title: 'Предварительный сводный сметный расчет (ССР)', required: true, passed: false }
             ]
           },
           G3: {
             code: 'Г3',
             name: 'Проектирование и экспертиза',
-            status: 'active',
-            date: '2026-11-30',
-            decision: 'В процессе проверки в ФАУ «Главгосэкспертиза России»',
+            status: 'planned',
+            date: '',
+            decision: '',
             checklist: [
               { id: 'c7', title: 'Положительное заключение ФАУ «Главгосэкспертиза России»', required: true, passed: false },
-              { id: 'c8', title: 'Утвержденная проектная документация (стадия «П»)', required: true, passed: true },
+              { id: 'c8', title: 'Утвержденная проектная документация (стадия «П»)', required: true, passed: false },
               { id: 'c9', title: 'Разрешение на строительство / реконструкцию объекта', required: true, passed: false }
             ]
           },
@@ -81,8 +81,8 @@ class InvestModule {
             code: 'Г4',
             name: 'Ввод в промышленную эксплуатацию',
             status: 'planned',
-            date: '2027-12-15',
-            decision: 'Запланировано на IV кв. 2027',
+            date: '',
+            decision: '',
             checklist: [
               { id: 'c10', title: 'Акт Государственной приемочной комиссии (форма КС-14)', required: true, passed: false },
               { id: 'c11', title: 'Заключение органа государственного строительного надзора (ЗОС)', required: true, passed: false },
@@ -90,13 +90,7 @@ class InvestModule {
             ]
           }
         },
-        cashFlows: [
-          { year: 2025, capex: 24000000, opex: 0, revenue: 0, netFlow: -24000000 },
-          { year: 2026, capex: 48000000, opex: 3000000, revenue: 15000000, netFlow: -36000000 },
-          { year: 2027, capex: 18000000, opex: 8000000, revenue: 45000000, netFlow: 19000000 },
-          { year: 2028, capex: 0, opex: 12000000, revenue: 62000000, netFlow: 50000000 },
-          { year: 2029, capex: 0, opex: 14000000, revenue: 70000000, netFlow: 56000000 }
-        ]
+        cashFlows: []
       };
     }
   }
