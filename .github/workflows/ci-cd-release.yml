@@ -31,7 +31,7 @@ jobs:
           node-version: 20
 
       - name: 📦 Установка зависимостей
-        run: npm ci || npm install
+        run: npm install --legacy-peer-deps
 
       - name: 🔍 Проверка типов и синтаксиса (TypeScript Lint)
         run: npm run lint
@@ -53,7 +53,7 @@ jobs:
           node-version: 20
 
       - name: 📦 Установка зависимостей
-        run: npm ci || npm install
+        run: npm install --legacy-peer-deps
 
       - name: 🗜️ Установка утилит архивации (zip, tar)
         run: sudo apt-get update && sudo apt-get install -y zip tar
