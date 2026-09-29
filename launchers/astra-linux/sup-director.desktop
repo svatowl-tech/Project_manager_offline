@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=СУП Руководителя Направления (SMB)
+GenericName=Система управления проектами и договорами
+Comment=Автономное рабочее место руководителя направления для работы с сетевой папкой SMB
+Exec=sh -c '"$(dirname "%k")/start_sup_astra.sh"'
+Icon=applications-office
+Terminal=false
+Categories=Office;ProjectManagement;Finance;
+Keywords=управление;проекты;канбан;договоры;гант;астра;
+StartupNotify=true

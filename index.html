@@ -1,0 +1,2127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Система Управления Руководителя (SMB Offline)</title>
+  <meta name="description" content="Автономное корпоративное рабочее место руководителя направления для Windows и Astra Linux: справочники внешних предприятий и сотрудников, генератор писем и протоколов, раздельные папки БД и Библиотеки, автокаталогизация, Канбан, Гант (MS Project), Договоры, Word/Excel генератор, оффлайн OCR, PDF Студия и CAD/Visio." />
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div id="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-badge">СУП</div>
+        <div>
+          <div class="brand-title">Руководитель</div>
+          <div class="brand-subtitle">SMB Offline Edition</div>
+        </div>
+      </div>
+
+      <ul class="nav-list">
+        <li>
+          <a class="nav-item active" data-tab="kanban">
+            <span class="nav-icon">📋</span>
+            <span>Канбан и Задачи</span>
+            <span class="nav-badge" id="nav-badge-tasks">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="calendar">
+            <span class="nav-icon">📅</span>
+            <span>Календарь и План</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="gantt">
+            <span class="nav-icon">📊</span>
+            <span>Диаграмма Ганта</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="documents">
+            <span class="nav-icon">📑</span>
+            <span>Документы и Word</span>
+            <span class="nav-badge" id="nav-badge-contracts">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="ocr">
+            <span class="nav-icon">📷</span>
+            <span>Скан-OCR и Каталог</span>
+            <span class="nav-badge" id="nav-badge-docs">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="pdfstudio">
+            <span class="nav-icon">📑</span>
+            <span>PDF Студия (PDF24)</span>
+            <span class="badge badge-low" style="margin-left: auto; font-size: 0.68rem; padding: 2px 6px;">Pro</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="cad">
+            <span class="nav-icon">📐</span>
+            <span>Инженерная графика</span>
+            <span class="badge badge-high" style="margin-left: auto; font-size: 0.68rem; padding: 2px 6px;">CAD</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="directory">
+            <span class="nav-icon">👥</span>
+            <span>Глобальный справочник</span>
+            <span class="nav-badge" id="nav-badge-employees">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="invest">
+            <span class="nav-icon">🏆</span>
+            <span>Гейты и Паспорт (РП-3)</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="risks">
+            <span class="nav-icon">🛡️</span>
+            <span>Реестр рисков (RMS)</span>
+            <span class="nav-badge" id="nav-badge-risks">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="evm">
+            <span class="nav-icon">📈</span>
+            <span>EVM и S-Кривая</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item" data-tab="calculators">
+            <span class="nav-icon">🧮</span>
+            <span>Спецкалькуляторы</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="storage-summary">
+          <span>🔄</span>
+          <span id="footer-sync-time">Синхр: только что</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-sm" id="btn-open-diagnostics" style="flex: 1;" title="Диагностика файлового хранилища">
+            ⚙️ Инфо SMB
+          </button>
+          <button class="btn btn-sm btn-icon" id="btn-theme-toggle" title="Переключить тему">
+            <span id="theme-icon">🌙</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <main class="main-wrapper">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <div class="page-title" id="current-page-title">Канбан и Задачи</div>
+          
+          <!-- Data Directory Status Pill -->
+          <div class="connection-status" id="btn-connect-data-dir" title="Нажмите для выбора папки базы данных (/data/tasks/, /contracts/, /locks/)">
+            <div class="status-indicator" id="header-data-indicator"></div>
+            <span id="header-data-text">БД: Не подключена</span>
+          </div>
+
+          <!-- Library Directory Status Pill -->
+          <div class="connection-status" id="btn-connect-lib-dir" title="Нажмите для выбора папки корпоративной библиотеки документов и архива">
+            <div class="status-indicator" id="header-lib-indicator"></div>
+            <span id="header-lib-text">Библиотека: Не подключена</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn btn-sm btn-primary" id="btn-open-batch-scanner" title="Запустить пакетное сканирование входящей папки и автокаталогизацию">
+            🔍 Пакетный сканер
+          </button>
+          <div class="user-selector-container" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="user-selector-label">Пользователь:</span>
+            <select class="user-select" id="header-user-select" style="min-width: 180px;"></select>
+            <button class="btn btn-sm" id="btn-register-user" title="Регистрация нового пользователя" style="padding: 0.35rem 0.6rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+              👤 Регистрация
+            </button>
+          </div>
+          <button class="btn btn-sm" id="btn-seed-data" title="Заполнить демо-данными">
+            ⚡ Демо-данные
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <section class="content-area">
+        
+        <!-- Tab: Kanban & Tasks -->
+        <div class="tab-content active" id="tab-kanban">
+          <div class="kanban-controls">
+            <div class="kanban-filters">
+              <input type="text" id="task-search-input" class="form-control" placeholder="🔍 Поиск по названию или #тегу..." style="width: 250px;">
+              <select id="task-assignee-filter" class="form-control" style="width: 180px;">
+                <option value="all">Все исполнители</option>
+              </select>
+              <select id="task-priority-filter" class="form-control" style="width: 160px;">
+                <option value="all">Все приоритеты</option>
+                <option value="critical">Критический</option>
+                <option value="high">Высокий</option>
+                <option value="medium">Средний</option>
+                <option value="low">Низкий</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="btn-new-task">
+              ➕ Создать задачу
+            </button>
+          </div>
+
+          <div class="kanban-board">
+            <div class="kanban-column" data-status="backlog">
+              <div class="column-header">
+                <span>Бэклог</span>
+                <span class="column-counter" id="counter-backlog">0</span>
+              </div>
+              <div class="column-cards" id="kanban-col-backlog"></div>
+            </div>
+
+            <div class="kanban-column" data-status="in_progress">
+              <div class="column-header">
+                <span>В работе</span>
+                <span class="column-counter" id="counter-in_progress">0</span>
+              </div>
+              <div class="column-cards" id="kanban-col-in_progress"></div>
+            </div>
+
+            <div class="kanban-column" data-status="review">
+              <div class="column-header">
+                <span>Согласование</span>
+                <span class="column-counter" id="counter-review">0</span>
+              </div>
+              <div class="column-cards" id="kanban-col-review"></div>
+            </div>
+
+            <div class="kanban-column" data-status="done">
+              <div class="column-header">
+                <span>Завершено</span>
+                <span class="column-counter" id="counter-done">0</span>
+              </div>
+              <div class="column-cards" id="kanban-col-done"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: Calendar & Weekly Plan -->
+        <div class="tab-content" id="tab-calendar">
+          <div class="calendar-view">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="btn-group">
+                  <button class="btn btn-sm active" id="cal-mode-week">Текущая неделя</button>
+                  <button class="btn btn-sm" id="cal-mode-month">Месяц</button>
+                </div>
+                <div style="display: flex; gap: 0.25rem;">
+                  <button class="btn btn-sm" id="cal-btn-prev">◀</button>
+                  <button class="btn btn-sm" id="cal-btn-today">Сегодня</button>
+                  <button class="btn btn-sm" id="cal-btn-next">▶</button>
+                </div>
+                <h3 id="cal-month-title" style="font-size: 1.05rem; font-weight: 700; margin-left: 0.5rem;"></h3>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="window.tasksModule.openTaskModal(null)">➕ Запланировать задачу</button>
+            </div>
+            <div id="cal-grid-area" style="flex: 1; min-height: 0; display: flex; flex-direction: column;"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Gantt Chart -->
+        <div class="tab-content" id="tab-gantt">
+          <div class="gantt-container" style="display: flex; flex-direction: column; height: 100%; padding: 0.75rem;">
+            <div id="gantt-chart-area" style="flex: 1; min-height: 0; display: flex; flex-direction: column;"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Documents & Word (.docx) Generator -->
+        <div class="tab-content" id="tab-documents">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; height: 100%;">
+            
+            <!-- Left: Document Generation Form -->
+            <div class="calc-card" style="overflow-y: auto;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1.05rem; font-weight: 700;">📄 Генератор документов Word (.docx)</h3>
+                <span class="badge badge-low">Docxtemplater</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">1. Выберите договор из реестра (для автоподстановки):</label>
+                <select id="doc-select-contract" class="form-control"></select>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">2. Шаблон документа:</label>
+                  <select id="doc-select-template" class="form-control">
+                    <option value="act" selected>Акт сдачи-приемки работ</option>
+                    <option value="contract">Типовой договор поставки</option>
+                    <option value="add_agreement">Дополнительное соглашение №1</option>
+                    <option value="custom">Пользовательский .docx шаблон...</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Дата документа:</label>
+                  <div style="display: flex; gap: 4px;">
+                    <input type="date" id="doc-field-date" class="form-control" style="flex: 1;">
+                    <button type="button" class="btn btn-sm" id="btn-doc-date-today" title="Сегодня">📅</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Custom template file upload container -->
+              <div id="doc-custom-template-box" style="display: none; background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px dashed var(--border-color);">
+                <label class="form-label">Загрузите файл пользовательского .docx шаблона:</label>
+                <input type="file" id="doc-upload-template-file" accept=".docx" class="form-control">
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                  Поддерживаются теги: <code>{doc_num}</code>, <code>{client}</code>, <code>{inn}</code>, <code>{kpp}</code>, <code>{sum}</code>, <code>{sum_words}</code>, <code>{curator}</code>, <code>{subject}</code>, <code>{date}</code>.
+                </div>
+              </div>
+
+              <!-- Requisite Form Fields -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Номер документа {doc_num}:</label>
+                  <input type="text" id="doc-field-num" class="form-control" placeholder="№ Д-401/26">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Контрагент / Клиент {client}:</label>
+                  <input type="text" id="doc-field-client" class="form-control" placeholder="АО «ИнформТехно»">
+                </div>
+              </div>
+
+              <div class="form-row-3">
+                <div class="form-group">
+                  <label class="form-label">ИНН {inn}:</label>
+                  <input type="text" id="doc-field-inn" class="form-control" placeholder="7701234567">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">КПП {kpp}:</label>
+                  <input type="text" id="doc-field-kpp" class="form-control" placeholder="770101001">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Сумма (руб) {sum}:</label>
+                  <input type="number" id="doc-field-sum" class="form-control" placeholder="1000000">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Предмет / Назначение {subject}:</label>
+                <input type="text" id="doc-field-subject" class="form-control" placeholder="Поставка серверного оборудования и пусконаладка">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Ответственный куратор {curator}:</label>
+                <input type="text" id="doc-field-curator" class="form-control" placeholder="Соколов В.П. (Руководитель)">
+              </div>
+
+              <button class="btn btn-primary" id="btn-generate-docx" style="margin-top: 0.5rem; height: 42px; font-size: 0.95rem;">
+                🚀 Сформировать и скачать .docx
+              </button>
+            </div>
+
+            <!-- Right: Contract Registry Quick View -->
+            <div class="calc-card" style="overflow-y: auto;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1.05rem; font-weight: 700;">📑 Реестр договоров направления</h3>
+                <button class="btn btn-sm btn-primary" id="btn-new-contract">➕ Новый договор</button>
+              </div>
+
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="contract-search-input" class="form-control" placeholder="🔍 Поиск по номеру, названию..." style="flex: 1;">
+              </div>
+
+              <div class="data-table-container" style="flex: 1; overflow-y: auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Номер</th>
+                      <th>Контрагент</th>
+                      <th>Сумма</th>
+                      <th>Срок</th>
+                      <th>Статус</th>
+                    </tr>
+                  </thead>
+                  <tbody id="contracts-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab: OCR & Document Catalog -->
+        <div class="tab-content" id="tab-ocr">
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- Top OCR Studio -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+              
+              <!-- Left: Upload, Dropzone & Raw Text -->
+              <div class="calc-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">📷 Оптическое распознавание (Оффлайн OCR)</h3>
+                  <span class="badge badge-low">Tesseract.js WASM</span>
+                </div>
+
+                <!-- Hidden file input -->
+                <input type="file" id="ocr-file-input" accept="image/*,.pdf" style="display: none;">
+
+                <!-- Dropzone -->
+                <div class="ocr-dropzone" id="ocr-dropzone">
+                  <div style="font-size: 2.2rem;">📥</div>
+                  <div style="font-weight: 600; font-size: 0.95rem;">Перетащите скан документа сюда</div>
+                  <div style="font-size: 0.78rem; color: var(--text-muted);">
+                    Поддерживаются PNG, JPG, TIFF, BMP и одностраничные PDF
+                  </div>
+                  <button type="button" class="btn btn-sm btn-primary" style="margin-top: 4px;">Выбрать файл на диске</button>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="ocr-progress-box" style="display: none; background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600;">
+                    <span id="ocr-progress-text">Распознавание текста...</span>
+                  </div>
+                  <div class="ocr-progress-container">
+                    <div class="ocr-progress-fill" id="ocr-progress-bar" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <!-- Preview Image -->
+                <div id="ocr-preview-container" style="display: none; max-height: 150px; overflow: hidden; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-align: center; background: #000;">
+                  <img id="ocr-preview-img" style="max-height: 150px; max-width: 100%; object-fit: contain;">
+                </div>
+
+                <!-- Raw Text Area -->
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="form-label">Распознанный сырой текст:</label>
+                    <button type="button" class="btn btn-sm" id="btn-ocr-copy-text">📋 Копировать текст</button>
+                  </div>
+                  <textarea id="ocr-raw-text" class="form-control" rows="4" placeholder="Здесь отобразится текст скана после OCR обработки..." readonly style="font-family: monospace; font-size: 0.78rem;"></textarea>
+                </div>
+              </div>
+
+              <!-- Right: Intelligent RegEx Extracted Metadata -->
+              <div class="calc-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">🧠 Интеллектуальный RegEx-экстрактор</h3>
+                  <span class="badge badge-status-done">Автопарсинг</span>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Тип документа (определен):</label>
+                    <input type="text" id="ocr-field-type" class="form-control" placeholder="Договор / Акт / Счет">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Номер документа:</label>
+                    <input type="text" id="ocr-field-number" class="form-control" placeholder="№ Д-401/26">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Дата документа:</label>
+                    <input type="date" id="ocr-field-date" class="form-control">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Сумма документа (руб):</label>
+                    <input type="number" id="ocr-field-sum" class="form-control" placeholder="0">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Контрагент / Организация:</label>
+                  <input type="text" id="ocr-field-client" class="form-control" placeholder="АО «ИнформТехноСистемы»">
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">ИНН (10 или 12 цифр):</label>
+                    <input type="text" id="ocr-field-inn" class="form-control" placeholder="7701234567">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">КПП:</label>
+                    <input type="text" id="ocr-field-kpp" class="form-control" placeholder="770101001">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Ссылка на файл-оригинал в сетевой папке (SMB):</label>
+                  <input type="text" id="ocr-field-path" class="form-control" placeholder="\\SRV-CORP\DOCS\scan.pdf">
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                  <button class="btn btn-primary" id="btn-ocr-save-catalog" style="flex: 1; height: 42px;">
+                    💾 Внести в каталог (/data/docs/)
+                  </button>
+                  <button class="btn btn-success" id="btn-ocr-create-contract" style="flex: 1; height: 42px;">
+                    ⚡ Создать договор из скана
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Bottom: Document Catalog Registry -->
+            <div class="calc-card">
+              <div class="kanban-controls">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <span style="font-weight: 700; font-size: 1rem;">🗂️ Реестр каталогизированных документов</span>
+                  <input type="text" id="ocr-search-input" class="form-control" placeholder="🔍 Поиск по контрагенту, номеру, ИНН..." style="width: 280px;">
+                  <select id="ocr-type-filter" class="form-control" style="width: 190px;">
+                    <option value="all">Все типы документов</option>
+                    <option value="Договор">Договоры</option>
+                    <option value="Акт приема-передачи">Акты приема-передачи</option>
+                    <option value="Дополнительное соглашение">Доп. соглашения</option>
+                    <option value="Счет на оплату">Счета на оплату</option>
+                  </select>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button class="btn btn-sm btn-primary" onclick="window.ocrModule.openBatchScannerModal()">
+                    🔍 Пакетное сканирование входящих
+                  </button>
+                  <button class="btn btn-sm" id="btn-ocr-export-excel">
+                    📤 Выгрузить каталог в Excel (.xlsx)
+                  </button>
+                </div>
+              </div>
+
+              <div class="data-table-container" id="ocr-catalog-table-container"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab: Global Directory (Enterprises, External & Internal Staff, Automation) -->
+        <div class="tab-content" id="tab-directory">
+          <div class="kanban-controls" style="flex-wrap: wrap; gap: 0.6rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+              <div class="btn-group" id="dir-subtabs-group">
+                <button class="btn btn-sm active" id="dir-subtab-organizations">🏢 Внешние предприятия</button>
+                <button class="btn btn-sm" id="dir-subtab-external-contacts">👥 Сотрудники других предприятий</button>
+                <button class="btn btn-sm" id="dir-subtab-employees">🏛 Внутренний штат</button>
+                <button class="btn btn-sm" id="dir-subtab-contracts">📜 Реестр договоров</button>
+                <button class="btn btn-sm btn-primary" id="dir-subtab-quick-generator">⚡ Генератор писем и протоколов</button>
+              </div>
+              <input type="text" id="dir-search-input" class="form-control" placeholder="🔍 Поиск по организациям, реквизитам, ФИО..." style="width: 260px;">
+              <select id="dir-type-filter" class="form-control" style="width: 170px; display: inline-block;">
+                <option value="all">Все типы</option>
+              </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
+              <input type="file" id="dir-import-file-input" accept=".xlsx, .xls, .csv" style="display: none;">
+              
+              <button class="btn btn-sm" id="btn-import-excel" title="Импортировать записи из Excel или CSV">
+                📥 Импорт Excel
+              </button>
+              <button class="btn btn-sm" id="btn-export-excel" title="Выгрузить текущую таблицу в .xlsx">
+                📤 Экспорт Excel
+              </button>
+              <button class="btn btn-sm btn-primary" id="btn-dir-add-item">
+                ➕ Добавить организацию
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Directory Container (Table or Letter Generator) -->
+          <div id="dir-main-view-container" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+            <div class="data-table-container" id="dir-table-container" style="flex: 1; overflow-y: auto;"></div>
+          </div>
+        </div>
+
+        <!-- Tab: Special Calculators -->
+        <div class="tab-content" id="tab-calculators">
+          <div class="calc-grid">
+            <!-- Calculator 1: VAT Calculator -->
+            <div class="calc-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1rem; font-weight: 700;">🧾 Калькулятор НДС</h3>
+                <span class="badge badge-low">Налоговый расчет</span>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Исходная сумма (руб):</label>
+                <input type="number" id="vat-input-sum" class="form-control" value="500000" min="0" step="1000">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Ставка НДС:</label>
+                  <select id="vat-rate" class="form-control">
+                    <option value="20" selected>20% (Основная ставка)</option>
+                    <option value="10">10% (Льготная ставка)</option>
+                    <option value="0">0% (Без НДС)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Операция:</label>
+                  <select id="vat-mode" class="form-control">
+                    <option value="extract" selected>Выделить НДС (в т.ч.)</option>
+                    <option value="add">Начислить сверху (+)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="calc-result-box">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">Результат расчёта:</span>
+                  <button type="button" class="btn btn-sm btn-primary" id="btn-copy-vat" title="Скопировать все значения">
+                    📋 Скопировать
+                  </button>
+                </div>
+                <div class="calc-result-val" id="vat-result-total">0.00 ₽</div>
+                <div id="vat-result-breakdown" style="font-size: 0.82rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 3px; margin-top: 4px;"></div>
+              </div>
+            </div>
+
+            <!-- Calculator 2: Work Days & Deadlines -->
+            <div class="calc-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1rem; font-weight: 700;">⏱️ Калькулятор рабочих сроков</h3>
+                <span class="badge badge-low">Производственный</span>
+              </div>
+
+              <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                <div style="font-size: 0.82rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">
+                  А. Рабочих дней между датами (исключая сб и вс):
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Дата начала:</label>
+                    <input type="date" id="wd-start-date" class="form-control">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Дата окончания:</label>
+                    <input type="date" id="wd-end-date" class="form-control">
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; background: var(--bg-primary); padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                  <span style="font-size: 0.8rem; color: var(--text-muted);">Чистых рабочих дней:</span>
+                  <b id="wd-diff-result" style="font-size: 1rem; color: var(--accent-primary);">—</b>
+                </div>
+                <div id="wd-diff-desc" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;"></div>
+              </div>
+
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text-secondary);">
+                  Б. Вычисление дедлайна (+ N рабочих дней):
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Дата отсчёта:</label>
+                    <input type="date" id="wd-add-start" class="form-control">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Рабочих дней (+):</label>
+                    <input type="number" id="wd-add-count" class="form-control" value="10" min="1" max="365">
+                  </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; background: var(--bg-primary); padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                  <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Итоговый дедлайн:</div>
+                    <b id="wd-add-result" style="font-size: 1.05rem; color: var(--accent-primary);">—</b>
+                    <div id="wd-add-desc" style="font-size: 0.72rem; color: var(--text-muted);"></div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-primary" id="btn-copy-deadline">
+                    📋 Копировать
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Calculator 3: Labor Cost & FOT -->
+            <div class="calc-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1rem; font-weight: 700;">💼 Калькулятор ФОТ и себестоимости</h3>
+                <span class="badge badge-low">Себестоимость</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Трудоёмкость (чел-часы):</label>
+                <input type="number" id="fot-hours" class="form-control" value="160" min="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ставка специалиста (руб/час):</label>
+                <input type="number" id="fot-rate" class="form-control" value="1500" min="0">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Страховые взносы (%):</label>
+                  <input type="number" id="fot-tax" class="form-control" value="30.2" min="0" step="0.1">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Накладные расходы (%):</label>
+                  <input type="number" id="fot-overhead" class="form-control" value="20" min="0" step="1">
+                </div>
+              </div>
+              <div class="calc-result-box">
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Себестоимость этапа:</div>
+                <div class="calc-result-val" id="fot-result-total">0 ₽</div>
+                <div id="fot-result-breakdown" style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.25rem;"></div>
+              </div>
+            </div>
+
+            <!-- Calculator 4: EVM Project Indices -->
+            <div class="calc-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1rem; font-weight: 700;">📈 Анализ освоенного объёма (EVM)</h3>
+                <span class="badge badge-low">Контроль проекта</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Плановый объём PV (Planned Value, руб):</label>
+                <input type="number" id="evm-pv" class="form-control" value="5000000" min="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Освоенный объём EV (Earned Value, руб):</label>
+                <input type="number" id="evm-ev" class="form-control" value="4800000" min="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Фактические затраты AC (Actual Cost, руб):</label>
+                <input type="number" id="evm-ac" class="form-control" value="4600000" min="0">
+              </div>
+              <div class="calc-result-box">
+                <div class="form-row">
+                  <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Индекс графика (SPI):</div>
+                    <div class="calc-result-val" id="evm-spi-val">1.00</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Индекс затрат (CPI):</div>
+                    <div class="calc-result-val" id="evm-cpi-val">1.00</div>
+                  </div>
+                </div>
+                <div id="evm-summary-desc" style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.4rem;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab: PDF Studio (PDF24 Suite) -->
+        <div class="tab-content" id="tab-pdfstudio">
+          <div class="pdf-studio-layout">
+            
+            <!-- Tools Sub-Navbar -->
+            <div class="pdf-tools-nav">
+              <button type="button" class="pdf-tool-btn active" data-tool="merge">
+                <span>➕</span>
+                <span>Объединить PDF</span>
+              </button>
+              <button type="button" class="pdf-tool-btn" data-tool="split">
+                <span>✂️</span>
+                <span>Разделить / Извлечь</span>
+              </button>
+              <button type="button" class="pdf-tool-btn" data-tool="organize">
+                <span>📐</span>
+                <span>Организовать и повернуть</span>
+              </button>
+              <button type="button" class="pdf-tool-btn" data-tool="watermark">
+                <span>🛡️</span>
+                <span>Штампы и водяные знаки</span>
+              </button>
+              <button type="button" class="pdf-tool-btn" data-tool="compress">
+                <span>🗜️</span>
+                <span>Сжатие и оптимизация</span>
+              </button>
+              <button type="button" class="pdf-tool-btn" data-tool="img2pdf">
+                <span>🖼️</span>
+                <span>Картинки в PDF</span>
+              </button>
+              <button type="button" class="pdf-tool-btn" data-tool="extract">
+                <span>📝</span>
+                <span>Извлечь текст</span>
+              </button>
+            </div>
+
+            <!-- Panel 1: Merge PDF -->
+            <div class="pdf-tool-panel active" id="pdf-panel-merge">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <h3 style="font-size: 1.1rem; font-weight: 700;">➕ Объединение нескольких PDF файлов в один</h3>
+                  <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                    Объединяет произвольное количество PDF документов в единый многостраничный файл с сохранением порядка страниц.
+                  </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button type="button" class="btn" id="btn-clear-merge">Очистить список</button>
+                  <label class="btn btn-primary" style="margin: 0; cursor: pointer;">
+                    📂 Выбрать файлы PDF
+                    <input type="file" id="pdf-merge-input" multiple accept=".pdf,application/pdf" style="display: none;">
+                  </label>
+                </div>
+              </div>
+
+              <div class="pdf-dropzone" id="pdf-merge-dropzone" onclick="document.getElementById('pdf-merge-input').click()">
+                <div class="pdf-dropzone-icon">📑➕📑</div>
+                <div style="font-weight: 600; font-size: 1rem;">Перетащите файлы PDF сюда или нажмите для выбора</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Поддерживается выбор нескольких документов одновременно</div>
+              </div>
+
+              <!-- Merge File List -->
+              <div id="pdf-merge-list" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+
+              <!-- Merge Action Bar -->
+              <div id="pdf-merge-actions-bar" style="display: none; align-items: center; justify-content: space-between; background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-top: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <span id="pdf-merge-count-info" style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);"></span>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="form-label" style="margin: 0; white-space: nowrap;">Имя файла:</label>
+                    <input type="text" id="pdf-merge-filename" class="form-control" value="Объединенный_документ" style="width: 220px;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">.pdf</span>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-execute-merge" style="font-size: 0.95rem; padding: 0.6rem 1.25rem;">
+                  ⚡ Объединить в один PDF
+                </button>
+              </div>
+            </div>
+
+            <!-- Panel 2: Split & Extract -->
+            <div class="pdf-tool-panel" id="pdf-panel-split">
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">✂️ Разделение PDF и извлечение страниц</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                  Извлечение отдельных страниц, диапазонов или разбиение документа на несколько независимых файлов.
+                </p>
+              </div>
+
+              <div class="pdf-dropzone" id="pdf-split-dropzone" onclick="document.getElementById('pdf-split-input').click()">
+                <div class="pdf-dropzone-icon">✂️</div>
+                <div style="font-weight: 600; font-size: 1rem;">Выберите или перетащите PDF документ для разделения</div>
+                <input type="file" id="pdf-split-input" accept=".pdf,application/pdf" style="display: none;">
+              </div>
+
+              <div id="pdf-split-fileinfo"></div>
+
+              <div id="pdf-split-options" style="display: none; background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <div style="font-weight: 600; margin-bottom: 0.75rem;">Режим разделения:</div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="radio" name="split_mode" value="range" checked>
+                    <span><b>Извлечь диапазон страниц в один файл</b></span>
+                  </label>
+                  <div style="margin-left: 1.5rem;">
+                    <input type="text" id="split-range-input" class="form-control" placeholder="1-3, 5, 8-10" style="max-width: 350px;">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 3px;">Укажите номера через запятую или интервалы через дефис</div>
+                  </div>
+
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-top: 0.5rem;">
+                    <input type="radio" name="split_mode" value="each">
+                    <span><b>Разбить по 1 странице</b> (каждая страница в отдельный PDF)</span>
+                  </label>
+
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-top: 0.5rem;">
+                    <input type="radio" name="split_mode" value="chunk">
+                    <span><b>Разбить на равные части по N страниц</b></span>
+                  </label>
+                  <div style="margin-left: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="split-chunk-size" class="form-control" value="2" min="1" max="100" style="width: 100px;">
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">страниц в каждом файле</span>
+                  </div>
+                </div>
+
+                <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem; text-align: right;">
+                  <button type="button" class="btn btn-primary" id="btn-execute-split">
+                    ⚡ Выполнить разделение
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 3: Organize & Rotate -->
+            <div class="pdf-tool-panel" id="pdf-panel-organize">
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">📐 Организация, поворот и удаление страниц</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                  Визуальная сетка всех страниц: меняйте порядок, вращайте на 90°/180°, дублируйте или удаляйте лишние страницы.
+                </p>
+              </div>
+
+              <div class="pdf-dropzone" id="pdf-org-dropzone" onclick="document.getElementById('pdf-org-input').click()">
+                <div class="pdf-dropzone-icon">📐</div>
+                <div style="font-weight: 600; font-size: 1rem;">Выберите или перетащите PDF документ</div>
+                <input type="file" id="pdf-org-input" accept=".pdf,application/pdf" style="display: none;">
+              </div>
+
+              <div id="pdf-org-fileinfo"></div>
+
+              <!-- Quick Toolbar -->
+              <div id="pdf-org-toolbar" style="display: none; align-items: center; justify-content: space-between; background: var(--bg-tertiary); padding: 0.75rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <button type="button" class="btn btn-sm" id="btn-org-rotate-all-cw">🔄 Повернуть все (+90°)</button>
+                  <button type="button" class="btn btn-sm" id="btn-org-rotate-all-ccw">↩️ Повернуть все (-90°)</button>
+                  <button type="button" class="btn btn-sm" id="btn-org-reset">Сбросить</button>
+                </div>
+                <button type="button" class="btn btn-primary" id="btn-execute-organize">
+                  💾 Сохранить измененный PDF
+                </button>
+              </div>
+
+              <!-- Page Grid -->
+              <div id="pdf-org-grid" class="pdf-org-grid"></div>
+            </div>
+
+            <!-- Panel 4: Watermarks & Stamps -->
+            <div class="pdf-tool-panel" id="pdf-panel-watermark">
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">🛡️ Корпоративные штампы, водяные знаки и нумерация</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                  Наложение официальных штампов согласования, грифов секретности, копийности и нумерации страниц.
+                </p>
+              </div>
+
+              <div class="pdf-dropzone" id="pdf-wm-dropzone" onclick="document.getElementById('pdf-wm-input').click()">
+                <div class="pdf-dropzone-icon">🛡️</div>
+                <div style="font-weight: 600; font-size: 1rem;">Выберите или перетащите PDF документ для штампования</div>
+                <input type="file" id="pdf-wm-input" accept=".pdf,application/pdf" style="display: none;">
+              </div>
+
+              <div id="pdf-wm-fileinfo"></div>
+
+              <div id="pdf-wm-options" style="display: none; grid-template-columns: 1.3fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                <!-- Left: Controls -->
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                  <!-- Presets -->
+                  <div>
+                    <label class="form-label">Готовые пресеты штампов:</label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                      <button type="button" class="wm-preset-btn active" data-preset="copy_verified">КОПИЯ ВЕРНА</button>
+                      <button type="button" class="wm-preset-btn" data-preset="confidential">КОНФИДЕНЦИАЛЬНО</button>
+                      <button type="button" class="wm-preset-btn" data-preset="approved">СОГЛАСОВАНО</button>
+                      <button type="button" class="wm-preset-btn" data-preset="draft">ЧЕРНОВИК</button>
+                      <button type="button" class="wm-preset-btn" data-preset="cancelled">АННУЛИРОВАНО</button>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Основной текст штампа / знака:</label>
+                    <input type="text" id="wm-text-input" class="form-control" value="КОПИЯ ВЕРНА">
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Дополнительный текст (примечание):</label>
+                    <input type="text" id="wm-subtext-input" class="form-control" placeholder="Подразделение / Номер приказа">
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Цвет оттиска:</label>
+                      <select id="wm-color-select" class="form-control">
+                        <option value="#2563eb" selected>Синий (Печать / Штамп)</option>
+                        <option value="#dc2626">Красный (Гриф / Предупреждение)</option>
+                        <option value="#16a34a">Зеленый (Согласовано / Оплачено)</option>
+                        <option value="#475569">Серый (Водяной знак)</option>
+                        <option value="#000000">Черный</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">Угол наклона:</label>
+                      <select id="wm-angle-select" class="form-control">
+                        <option value="0" selected>0° (Горизонтально)</option>
+                        <option value="45">45° (По диагонали)</option>
+                        <option value="-45">-45° (Обратная диагональ)</option>
+                        <option value="90">90° (Вертикально)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label">Положение на странице:</label>
+                      <select id="wm-position-select" class="form-control">
+                        <option value="bottom_right" selected>Правый нижний угол (Штамп)</option>
+                        <option value="top_right">Правый верхний угол</option>
+                        <option value="center">По центру листа</option>
+                        <option value="header">Верхний колонтитул</option>
+                        <option value="footer">Нижний колонтитул</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label">Размер шрифта (pt):</label>
+                      <input type="number" id="wm-fontsize-input" class="form-control" value="20" min="8" max="72">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <div style="display: flex; justify-content: space-between;">
+                      <label class="form-label">Прозрачность оттиска:</label>
+                      <b id="wm-opacity-val" style="color: var(--accent-primary);">85%</b>
+                    </div>
+                    <input type="range" id="wm-opacity-slider" min="10" max="100" value="85" style="width: 100%;">
+                  </div>
+
+                  <div style="display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-sm);">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+                      <input type="checkbox" id="wm-include-date" checked>
+                      <span>Включать текущую дату</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+                      <input type="checkbox" id="wm-include-user" checked>
+                      <span>Включать фамилию исполнителя (из СУП)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+                      <input type="checkbox" id="wm-add-page-numbers">
+                      <span>Добавить нумерацию страниц внизу</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Right: Live Canvas Preview -->
+                <div class="wm-preview-box">
+                  <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-secondary);">
+                    Интерактивный предпросмотр на странице:
+                  </div>
+                  <canvas id="wm-preview-canvas" width="280" height="390" style="border: 1px solid var(--border-color); border-radius: 4px; box-shadow: var(--shadow-md);"></canvas>
+                  <div style="margin-top: 1.25rem; width: 100%;">
+                    <button type="button" class="btn btn-primary" id="btn-execute-watermark" style="width: 100%; font-size: 0.95rem; padding: 0.65rem;">
+                      ⚡ Применить штамп и скачать PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 5: Compress & Optimize -->
+            <div class="pdf-tool-panel" id="pdf-panel-compress">
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">🗜️ Сжатие и оптимизация PDF</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                  Уменьшение размера PDF для быстрой отправки по электронной почте или размещения в общей сетевой папке SMB.
+                </p>
+              </div>
+
+              <div class="pdf-dropzone" id="pdf-cmp-dropzone" onclick="document.getElementById('pdf-cmp-input').click()">
+                <div class="pdf-dropzone-icon">🗜️</div>
+                <div style="font-weight: 600; font-size: 1rem;">Выберите или перетащите PDF документ для сжатия</div>
+                <input type="file" id="pdf-cmp-input" accept=".pdf,application/pdf" style="display: none;">
+              </div>
+
+              <div id="pdf-cmp-fileinfo"></div>
+
+              <div id="pdf-cmp-options" style="display: none; background: var(--bg-primary); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-top: 1rem;">
+                <label class="form-label" style="margin-bottom: 0.75rem;">Уровень оптимизации и сжатия:</label>
+                <div style="display: flex; gap: 1rem;">
+                  <div class="cmp-level-btn active" data-level="medium">
+                    <div style="font-size: 1.25rem;">⚖️</div>
+                    <div style="font-weight: 700; margin-top: 4px;">Рекомендуемое сжатие</div>
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Баланс четкости и размера (~150 DPI)</div>
+                  </div>
+                  <div class="cmp-level-btn" data-level="high">
+                    <div style="font-size: 1.25rem;">🚀</div>
+                    <div style="font-weight: 700; margin-top: 4px;">Экстремальное сжатие</div>
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Максимальная экономия места (~72 DPI)</div>
+                  </div>
+                  <div class="cmp-level-btn" data-level="low">
+                    <div style="font-size: 1.25rem;">💎</div>
+                    <div style="font-weight: 700; margin-top: 4px;">Легкое сжатие</div>
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px;">Идеальное качество печати (~300 DPI)</div>
+                  </div>
+                </div>
+
+                <div id="pdf-cmp-result-box" style="display: none; margin-top: 1rem;"></div>
+
+                <div style="margin-top: 1.25rem; border-top: 1px solid var(--border-color); padding-top: 1rem; text-align: right;">
+                  <button type="button" class="btn btn-primary" id="btn-execute-compress">
+                    ⚡ Сжать и скачать PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 6: Images to PDF -->
+            <div class="pdf-tool-panel" id="pdf-panel-img2pdf">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <h3 style="font-size: 1.1rem; font-weight: 700;">🖼️ Конвертер изображений в PDF</h3>
+                  <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                    Объединение фотографий, схем, чертежей и сканов (JPG, PNG, WebP) в аккуратный PDF документ.
+                  </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button type="button" class="btn" id="btn-clear-img2pdf">Очистить</button>
+                  <label class="btn btn-primary" style="margin: 0; cursor: pointer;">
+                    🖼️ Добавить изображения
+                    <input type="file" id="pdf-img2pdf-input" multiple accept="image/*" style="display: none;">
+                  </label>
+                </div>
+              </div>
+
+              <div class="pdf-dropzone" id="pdf-img2pdf-dropzone" onclick="document.getElementById('pdf-img2pdf-input').click()">
+                <div class="pdf-dropzone-icon">🖼️➡️📄</div>
+                <div style="font-weight: 600; font-size: 1rem;">Перетащите сюда картинки (JPG, PNG, WebP)</div>
+              </div>
+
+              <div id="pdf-img2pdf-list" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+
+              <div id="pdf-img2pdf-actions-bar" style="display: none; flex-direction: column; gap: 1rem; background: var(--bg-tertiary); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-top: 0.5rem;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Формат страницы:</label>
+                    <select id="img2pdf-pagesize" class="form-control">
+                      <option value="a4_portrait" selected>A4 (Книжная ориентация)</option>
+                      <option value="a4_landscape">A4 (Альбомная ориентация)</option>
+                      <option value="auto">По размеру исходного изображения</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Поля страницы:</label>
+                    <select id="img2pdf-margin" class="form-control">
+                      <option value="narrow" selected>Узкие поля (20 pt)</option>
+                      <option value="none">Без полей (На всю страницу)</option>
+                      <option value="standard">Стандартные поля (40 pt)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Имя готового PDF:</label>
+                    <input type="text" id="img2pdf-filename" class="form-control" value="Фотографии_документов">
+                  </div>
+                </div>
+
+                <div style="text-align: right;">
+                  <button type="button" class="btn btn-primary" id="btn-execute-img2pdf" style="font-size: 0.95rem; padding: 0.6rem 1.5rem;">
+                    ⚡ Собрать изображения в PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel 7: Extract Text -->
+            <div class="pdf-tool-panel" id="pdf-panel-extract">
+              <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">📝 Извлечение чистого текста из PDF</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px;">
+                  Мгновенный парсинг текстового слоя PDF документов для копирования в отчеты или сохранения в текстовый файл.
+                </p>
+              </div>
+
+              <div class="pdf-dropzone" id="pdf-ext-dropzone" onclick="document.getElementById('pdf-ext-input').click()">
+                <div class="pdf-dropzone-icon">📝</div>
+                <div style="font-weight: 600; font-size: 1rem;">Выберите или перетащите PDF документ для чтения текста</div>
+                <input type="file" id="pdf-ext-input" accept=".pdf,application/pdf" style="display: none;">
+              </div>
+
+              <div id="pdf-ext-fileinfo"></div>
+
+              <div id="pdf-ext-results" style="display: none; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <span style="font-weight: 600; font-size: 0.9rem;">Извлеченный текст:</span>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-sm btn-primary" id="btn-copy-extracted-text">📋 Скопировать текст</button>
+                    <button type="button" class="btn btn-sm" id="btn-download-extracted-txt">💾 Скачать .TXT</button>
+                  </div>
+                </div>
+                <textarea id="pdf-extracted-text-area" class="form-control" rows="12" style="font-family: monospace; font-size: 0.85rem;" readonly></textarea>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab: CAD & Visio Viewer (Engineering Module) -->
+        <div class="tab-content" id="tab-cad">
+          <div class="cad-viewer-layout">
+            
+            <!-- Top Engineering Toolbar -->
+            <div class="cad-toolbar">
+              <div class="cad-tool-group">
+                <button type="button" class="cad-tool-btn active" id="btn-cad-tool-select" data-tool="select" title="Режим выбора и указателя">
+                  <span>↖</span>
+                  <span>Выбор</span>
+                </button>
+                <button type="button" class="cad-tool-btn" id="btn-cad-tool-pan" data-tool="pan" title="Панорамирование (или зажмите колесико мыши)">
+                  <span>✋</span>
+                  <span>Панорама</span>
+                </button>
+                <button type="button" class="cad-tool-btn" id="btn-cad-tool-measure" data-tool="measure" title="Инструмент «Линейка» (Измерение расстояний)">
+                  <span>📏</span>
+                  <span>Линейка</span>
+                </button>
+              </div>
+
+              <div class="cad-tool-group" style="border-left: 1px solid var(--border-color); padding-left: 0.5rem;">
+                <button type="button" class="cad-tool-btn" id="btn-cad-fit-screen" title="Показать весь чертеж по центру">
+                  <span>🔍</span>
+                  <span>По размеру экрана</span>
+                </button>
+                <button type="button" class="cad-tool-btn btn-icon" id="btn-cad-zoom-in" title="Приблизить">➕</button>
+                <button type="button" class="cad-tool-btn btn-icon" id="btn-cad-zoom-out" title="Отдалить">➖</button>
+              </div>
+
+              <div class="cad-tool-group" style="border-left: 1px solid var(--border-color); padding-left: 0.5rem;">
+                <span style="font-size: 0.78rem; color: var(--text-muted);">Пример:</span>
+                <select id="cad-demo-selector" class="form-control form-control-sm" style="width: 210px; font-size: 0.78rem;">
+                  <option value="floor_plan" selected>План серверной ЦОД (ГОСТ)</option>
+                  <option value="electrical">Однолинейная схема ЭОМ</option>
+                </select>
+              </div>
+
+              <div class="cad-tool-group" style="margin-left: auto; gap: 0.5rem;">
+                <label class="btn btn-sm btn-primary" style="margin: 0; cursor: pointer; font-size: 0.8rem;">
+                  📂 Открыть DXF / VSDX / SVG
+                  <input type="file" id="cad-file-input" accept=".dxf,.dwg,.vsdx,.svg" style="display: none;">
+                </label>
+                <button type="button" class="btn btn-sm" id="btn-cad-export-png" title="Экспорт чертежа в высоком разрешении">
+                  📷 HD PNG
+                </button>
+                <button type="button" class="btn btn-sm" id="btn-cad-print" title="Печать чертежа со штампом ГОСТ">
+                  🖨️ Печать
+                </button>
+              </div>
+            </div>
+
+            <!-- Main CAD Workspace (Canvas + Layer Manager) -->
+            <div class="cad-main-area">
+              <div class="cad-viewport-container" id="cad-viewport-container">
+                <canvas id="cad-viewport-canvas"></canvas>
+                <div class="cad-measure-output" id="cad-measure-output"></div>
+              </div>
+
+              <!-- Layer Manager Sidebar -->
+              <div class="cad-layers-panel">
+                <div class="cad-layers-header">
+                  <span>Слои чертежа</span>
+                  <div style="display: flex; gap: 4px;">
+                    <button type="button" class="btn btn-sm btn-icon" id="btn-cad-layers-show-all" title="Включить все слои" style="padding: 1px 5px; font-size: 0.7rem;">👁️</button>
+                    <button type="button" class="btn btn-sm btn-icon" id="btn-cad-layers-hide-all" title="Скрыть все слои" style="padding: 1px 5px; font-size: 0.7rem;">✕</button>
+                  </div>
+                </div>
+                <div class="cad-layers-list" id="cad-layers-list"></div>
+              </div>
+            </div>
+
+            <!-- Bottom Status Bar -->
+            <div class="cad-status-bar">
+              <span id="cad-status-filename">План_этажа_ГОСТ.dxf (32 примитива)</span>
+              <span id="cad-status-coordinates">X: 0.0 мм | Y: 0.0 мм</span>
+              <span id="cad-status-scale">Масштаб: 100%</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab: Stage-Gate & Investment Passport (RP-3) -->
+        <div class="tab-content" id="tab-invest"></div>
+
+        <!-- Tab: Risk Management System (RMS) -->
+        <div class="tab-content" id="tab-risks"></div>
+
+        <!-- Tab: EVM Analytics & S-Curve -->
+        <div class="tab-content" id="tab-evm"></div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- Task Modal -->
+  <div class="modal-overlay" id="task-modal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3 class="modal-title">Карточка задачи</h3>
+        <button class="btn btn-sm" id="btn-close-task-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="task-lock-warning" class="lock-banner" style="display: none;"></div>
+
+        <div class="form-group">
+          <label class="form-label">Наименование задачи *</label>
+          <input type="text" id="task-form-title" class="form-control" placeholder="Краткая суть задачи...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Описание / Техническое задание</label>
+          <textarea id="task-form-desc" class="form-control" rows="3" placeholder="Подробная постановка задачи..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Статус задачи</label>
+            <select id="task-form-status" class="form-control">
+              <option value="backlog">Бэклог</option>
+              <option value="in_progress">В работе</option>
+              <option value="review">Согласование</option>
+              <option value="done">Завершено</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Приоритет</label>
+            <select id="task-form-priority" class="form-control">
+              <option value="critical">Критический</option>
+              <option value="high">Высокий</option>
+              <option value="medium">Средний</option>
+              <option value="low">Низкий</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ответственный исполнитель</label>
+            <select id="task-form-assignee" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">График работ (Раздел / Проект Ганта)</label>
+            <select id="task-form-schedule" class="form-control">
+              <option value="all">🏢 Сводный график (Все работы)</option>
+              <option value="smr">🏗 СМР и Общестрой</option>
+              <option value="eng">⚡ Инженерия и ЭОМ/СС</option>
+              <option value="it">💻 ИТ и Цифровизация</option>
+              <option value="supply">📜 Поставки и Контракты</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Теги (через запятую)</label>
+          <input type="text" id="task-form-tags" class="form-control" placeholder="СМР, ГОЗ, Инфраструктура, #Срочно">
+        </div>
+
+        <!-- WBS Hierarchy & CPM Dependencies Section -->
+        <div style="background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-primary); margin-bottom: 0.5rem;">
+            📊 Календарно-сетевые параметры (WBS и связи Ганта):
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Родительский этап / Фаза (WBS):</label>
+              <select id="task-form-parent" class="form-control">
+                <option value="">(Корневой уровень / Без родителя)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Предшественник (Связь):</label>
+              <div style="display: flex; gap: 0.5rem;">
+                <select id="task-form-predecessor" class="form-control" style="flex: 1;">
+                  <option value="">(Нет предшественника)</option>
+                </select>
+                <select id="task-form-pred-type" class="form-control" style="width: 90px;">
+                  <option value="FS" selected>ОН (FS)</option>
+                  <option value="SS">НН (SS)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.35rem;">
+            <input type="checkbox" id="task-form-is-milestone" style="cursor: pointer;">
+            <label for="task-form-is-milestone" class="form-label" style="margin: 0; cursor: pointer;">
+              <b>Контрольная точка (Веха / Milestone)</b> — отображать ромбом ◆ с нулевой длительностью
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label class="form-label" style="margin: 0;">Процент выполнения задачи (%):</label>
+            <b id="task-form-progress-val" style="color: var(--accent-primary); font-size: 1rem;">0%</b>
+          </div>
+          <input type="range" id="task-form-progress" min="0" max="100" value="0" step="5" style="width: 100%; cursor: pointer;">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Дата начала</label>
+            <input type="date" id="task-form-start" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Дедлайн (Срок завершения)</label>
+            <input type="date" id="task-form-end" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Оценка трудоёмкости (часы)</label>
+            <input type="number" id="task-form-est" class="form-control" value="8" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Фактически затрачено (часы)</label>
+            <input type="number" id="task-form-act" class="form-control" value="0" min="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label class="form-label" style="margin: 0;">Чек-лист подзадач</label>
+            <button type="button" class="btn btn-sm" id="btn-add-subtask">➕ Добавить пункт</button>
+          </div>
+          <div id="task-subtasks-list" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-delete-task" style="margin-right: auto; display: none;">Удалить</button>
+        <button class="btn" id="btn-cancel-task">Отмена</button>
+        <button class="btn btn-primary" id="btn-save-task">Сохранить (FSA SMB)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contract Modal -->
+  <div class="modal-overlay" id="contract-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Карточка договора</h3>
+        <button class="btn btn-sm" id="btn-close-contract-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="contract-lock-warning" class="lock-banner" style="display: none;"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Номер договора *</label>
+            <input type="text" id="cnt-form-number" class="form-control" placeholder="№ Д-123/26">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Тип документа</label>
+            <select id="cnt-form-type" class="form-control">
+              <option value="Поставка">Поставка</option>
+              <option value="Услуги">Оказание услуг</option>
+              <option value="НИОКР">НИОКР</option>
+              <option value="Лицензионный">Лицензионный договор</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Предмет договора *</label>
+          <input type="text" id="cnt-form-title" class="form-control" placeholder="Поставка серверного оборудования...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Контрагент / Организация *</label>
+          <input type="text" id="cnt-form-counterparty" class="form-control" placeholder="АО «ИнформТехноСистемы»">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ИНН контрагента</label>
+            <input type="text" id="cnt-form-inn" class="form-control" placeholder="7701234567">
+          </div>
+          <div class="form-group">
+            <label class="form-label">КПП контрагента</label>
+            <input type="text" id="cnt-form-kpp" class="form-control" placeholder="770101001">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Сумма договора (с НДС, руб)</label>
+            <input type="number" id="cnt-form-sum" class="form-control" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ответственный куратор</label>
+            <select id="cnt-form-resp" class="form-control"></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Дата заключения</label>
+            <input type="date" id="cnt-form-start" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Срок действия (по)</label>
+            <input type="date" id="cnt-form-end" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Статус договора</label>
+          <select id="cnt-form-status" class="form-control">
+            <option value="active">Действует</option>
+            <option value="review">На согласовании</option>
+            <option value="closed">Исполнен</option>
+            <option value="terminated">Расторгнут</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Примечания / Путь к файлу на SMB</label>
+          <textarea id="cnt-form-notes" class="form-control" rows="2" placeholder="\\SRV-CORP\DOCS\scan.pdf"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-delete-contract" style="margin-right: auto; display: none;">Удалить</button>
+        <button class="btn" id="btn-cancel-contract">Отмена</button>
+        <button class="btn btn-primary" id="btn-save-contract">Сохранить договор</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee Modal -->
+  <div class="modal-overlay" id="employee-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Карточка сотрудника</h3>
+        <button class="btn btn-sm" id="btn-close-employee-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">ФИО сотрудника *</label>
+          <input type="text" id="emp-form-name" class="form-control" placeholder="Иванов Иван Иванович">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Должность</label>
+            <input type="text" id="emp-form-role" class="form-control" placeholder="Ведущий инженер">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Подразделение</label>
+            <input type="text" id="emp-form-dept" class="form-control" placeholder="Отдел разработки">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Рабочий телефон</label>
+            <input type="text" id="emp-form-phone" class="form-control" placeholder="+7 (495) 123-45-67">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Электронная почта</label>
+            <input type="email" id="emp-form-email" class="form-control" placeholder="ivanov@corp.ru">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Часовая ставка ФОТ (руб/ч)</label>
+            <input type="number" id="emp-form-rate" class="form-control" value="1500">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Статус доступности</label>
+            <select id="emp-form-status" class="form-control">
+              <option value="active">В строю</option>
+              <option value="vacation">В отпуске</option>
+              <option value="sick">На больничном</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-delete-employee" style="margin-right: auto; display: none;">Удалить</button>
+        <button class="btn" id="btn-cancel-employee">Отмена</button>
+        <button class="btn btn-primary" id="btn-save-employee">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Organization / External Enterprise Modal -->
+  <div class="modal-overlay" id="organization-modal">
+    <div class="modal-card wide" style="max-width: 820px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🏢 Карточка внешнего предприятия / организации</h3>
+        <button class="btn btn-sm" id="btn-close-org-modal">✕</button>
+      </div>
+      <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+        
+        <div class="form-row">
+          <div class="form-group" style="flex: 2;">
+            <label class="form-label">Краткое наименование организации *</label>
+            <input type="text" id="org-form-short-name" class="form-control" placeholder="АО «Концерн ВКО 'Алмаз-Антей'»">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Тип контрагента / статус</label>
+            <select id="org-form-type" class="form-control">
+              <option value="customer">Заказчик (Генеральный)</option>
+              <option value="general_contractor">Генподрядчик</option>
+              <option value="subcontractor">Субподрядчик</option>
+              <option value="supplier">Поставщик оборудования/ПО</option>
+              <option value="designer">Проектировщик / НИИ</option>
+              <option value="authority">Госорган / Ведомство</option>
+              <option value="partner">Партнер</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Полное официальное наименование (по ЕГРЮЛ)</label>
+          <input type="text" id="org-form-full-name" class="form-control" placeholder="Акционерное общество «Концерн воздушно-космической обороны 'Алмаз-Антей'»">
+        </div>
+
+        <!-- Requisites -->
+        <div style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.75rem;">
+          <div style="font-weight: 700; font-size: 0.82rem; color: var(--accent-primary); margin-bottom: 0.5rem;">
+            📋 ИНН, КПП, ОГРН и банковские реквизиты:
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ИНН *</label>
+              <input type="text" id="org-form-inn" class="form-control" placeholder="7731234567">
+            </div>
+            <div class="form-group">
+              <label class="form-label">КПП</label>
+              <input type="text" id="org-form-kpp" class="form-control" placeholder="773101001">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ОГРН</label>
+              <input type="text" id="org-form-ogrn" class="form-control" placeholder="1027700123456">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ОКПО</label>
+              <input type="text" id="org-form-okpo" class="form-control" placeholder="12345678">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex: 2;">
+              <label class="form-label">Наименование банка</label>
+              <input type="text" id="org-form-bank-name" class="form-control" placeholder="Банк ВТБ (ПАО), г. Москва">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label">БИК банка</label>
+              <input type="text" id="org-form-bik" class="form-control" placeholder="044525187">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Расчетный счет (Р/с)</label>
+              <input type="text" id="org-form-rs" class="form-control" placeholder="40702810100000012345">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Корреспондентский счет (К/с)</label>
+              <input type="text" id="org-form-ks" class="form-control" placeholder="30101810700000000187">
+            </div>
+          </div>
+        </div>
+
+        <!-- Addresses & Contacts -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Юридический адрес</label>
+            <input type="text" id="org-form-legal-address" class="form-control" placeholder="121471, г. Москва, ул. Верейская, д. 41">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Фактический / почтовый адрес</label>
+            <input type="text" id="org-form-actual-address" class="form-control" placeholder="121471, г. Москва, ул. Верейская, д. 41">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Официальный E-mail (Канцелярия / Экспедиция)</label>
+            <input type="email" id="org-form-email" class="form-control" placeholder="info@almaz-antey.ru">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Телефон приемной / коммутатора</label>
+            <input type="text" id="org-form-phone" class="form-control" placeholder="+7 (495) 276-29-00">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Сайт</label>
+            <input type="text" id="org-form-website" class="form-control" placeholder="https://almaz-antey.ru">
+          </div>
+        </div>
+
+        <!-- Head / Signatory -->
+        <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.75rem;">
+          <div style="font-weight: 700; font-size: 0.82rem; color: var(--accent-primary); margin-bottom: 0.5rem;">
+            ✍️ Руководитель организации (для автоподстановки в договоры, акты и письма):
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ФИО руководителя (Им. падеж)</label>
+              <input type="text" id="org-form-head-name" class="form-control" placeholder="Новиков Ян Валентинович">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ФИО в Род. падеже («в лице кого»)</label>
+              <input type="text" id="org-form-head-name-gen" class="form-control" placeholder="Новикова Яна Валентиновича">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ФИО в Дат. падеже («Кому»)</label>
+              <input type="text" id="org-form-head-name-dat" class="form-control" placeholder="Новикову Яну Валентиновичу">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Должность (Им. падеж)</label>
+              <input type="text" id="org-form-head-role" class="form-control" placeholder="Генеральный директор">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Должность (Род. падеж)</label>
+              <input type="text" id="org-form-head-role-gen" class="form-control" placeholder="Генерального директора">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Основание полномочий</label>
+              <input type="text" id="org-form-charter" class="form-control" placeholder="Устава">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Кодовая папка автокаталогизации</label>
+            <input type="text" id="org-form-folder-code" class="form-control" placeholder="Алмаз-Антей">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Примечания</label>
+            <input type="text" id="org-form-notes" class="form-control" placeholder="Курирует направление ГОЗ">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-delete-organization" style="margin-right: auto; display: none;">Удалить</button>
+        <button class="btn" id="btn-cancel-organization">Отмена</button>
+        <button class="btn btn-primary" id="btn-save-organization">Сохранить предприятие</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- External Contact Modal (Сотрудник стороннего предприятия) -->
+  <div class="modal-overlay" id="external-contact-modal">
+    <div class="modal-card wide" style="max-width: 760px;">
+      <div class="modal-header">
+        <h3 class="modal-title">👥 Карточка сотрудника / представителя сторонней организации</h3>
+        <button class="btn btn-sm" id="btn-close-ext-modal">✕</button>
+      </div>
+      <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+        
+        <div class="form-group">
+          <label class="form-label">Организация / Предприятие *</label>
+          <select id="ext-form-org-id" class="form-control"></select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ФИО сотрудника (Им. падеж) *</label>
+            <input type="text" id="ext-form-name" class="form-control" placeholder="Кузнецов Андрей Михайлович">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Категория / Роль в проектах</label>
+            <select id="ext-form-category" class="form-control">
+              <option value="head">Руководитель организации / Подписант</option>
+              <option value="gip" selected>Главный инженер проекта (ГИП)</option>
+              <option value="curator">Куратор проекта / Руководитель дирекции</option>
+              <option value="engineer">Ведущий специалист / Инженер</option>
+              <option value="lawyer">Юрисконсульт / Договорной отдел</option>
+              <option value="secretary">Секретарь / Делопроизводитель</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Grammatical Cases for Automated Letters & Protocols -->
+        <div style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 0.75rem;">
+          <div style="font-weight: 700; font-size: 0.82rem; color: var(--accent-primary); margin-bottom: 0.4rem;">
+            📝 Склонение ФИО и должности (для бланков писем и протоколов совещаний):
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">ФИО в Дательном падеже («Кому»)</label>
+              <input type="text" id="ext-form-name-dat" class="form-control" placeholder="Кузнецову Андрею Михайловичу">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ФИО в Родительном падеже («От кого»)</label>
+              <input type="text" id="ext-form-name-gen" class="form-control" placeholder="Кузнецова Андрея Михайловича">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Должность (Им. падеж)</label>
+              <input type="text" id="ext-form-role" class="form-control" placeholder="Главный инженер проекта (ГИП)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Должность в Дательном падеже («Кому»)</label>
+              <input type="text" id="ext-form-role-dat" class="form-control" placeholder="Главному инженеру проекта">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Официальное персональное обращение в письме</label>
+            <input type="text" id="ext-form-salutation" class="form-control" placeholder="Уважаемый Андрей Михайлович!">
+          </div>
+        </div>
+
+        <!-- Contacts -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Рабочий телефон / доб.</label>
+            <input type="text" id="ext-form-phone" class="form-control" placeholder="+7 (495) 276-29-44, доб. 114">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Мобильный телефон</label>
+            <input type="text" id="ext-form-mobile" class="form-control" placeholder="+7 (916) 234-56-78">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Электронная почта (E-mail)</label>
+            <input type="email" id="ext-form-email" class="form-control" placeholder="kuznetsov.am@almaz-antey.ru">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Кабинет / Корпус</label>
+            <input type="text" id="ext-form-cabinet" class="form-control" placeholder="Корпус 2, каб. 312">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Документ полномочий (Доверенность / Приказ / Устав)</label>
+            <input type="text" id="ext-form-power" class="form-control" placeholder="Доверенность № ДОВ-2026/08 от 15.01.2026">
+          </div>
+          <div class="form-group" style="display: flex; align-items: flex-end; padding-bottom: 0.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+              <input type="checkbox" id="ext-form-signatory" checked>
+              Имеет право подписи актов и протоколов
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Примечания</label>
+          <textarea id="ext-form-notes" class="form-control" rows="2" placeholder="Согласование проектных решений и участие в выездных комиссиях"></textarea>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-delete-external-contact" style="margin-right: auto; display: none;">Удалить</button>
+        <button class="btn" id="btn-cancel-external-contact">Отмена</button>
+        <button class="btn btn-primary" id="btn-save-external-contact">Сохранить сотрудника</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Storage Diagnostics Modal -->
+  <div class="modal-overlay" id="diagnostics-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Диагностика файлового хранилища (SMB)</h3>
+        <button class="btn btn-sm" id="btn-close-diag">✕</button>
+      </div>
+      <div class="modal-body" id="diag-modal-content"></div>
+      <div class="modal-footer">
+        <button class="btn btn-warning" id="btn-clear-stale-locks" style="margin-right: auto;">
+          🧹 Снять все блокировки
+        </button>
+        <button class="btn btn-primary" onclick="document.getElementById('diagnostics-modal').classList.remove('open')">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risk Modal -->
+  <div class="modal-overlay" id="risk-card-modal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3 class="modal-title">Карточка риска (RMS / ISO 31000)</h3>
+        <button class="btn btn-sm" id="btn-close-risk-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group" style="width: 140px;">
+            <label class="form-label">Код риска *</label>
+            <input type="text" id="risk-form-code" class="form-control" placeholder="RSK-01">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Наименование риска *</label>
+            <input type="text" id="risk-form-title" class="form-control" placeholder="Формулировка риска...">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Категория риска</label>
+            <select id="risk-form-category" class="form-control">
+              <option value="supply">Поставки и логистика (Supply Chain)</option>
+              <option value="regulatory">Регуляторный / Экспертиза / ГОЗ</option>
+              <option value="technical">Технический / Инженерный</option>
+              <option value="financial">Финансовый / Бюджет / Инфляция</option>
+              <option value="personnel">Кадровые ресурсы</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Источник возникновения риска</label>
+            <input type="text" id="risk-form-source" class="form-control" placeholder="Первопричина / фактор риска...">
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">Вероятность (P: 1-5)</label>
+            <select id="risk-form-prob" class="form-control">
+              <option value="1">1 — Маловероятно (&lt;10%)</option>
+              <option value="2">2 — Низкая (10-30%)</option>
+              <option value="3" selected>3 — Средняя (30-60%)</option>
+              <option value="4">4 — Высокая (60-80%)</option>
+              <option value="5">5 — Почти наверняка (&gt;80%)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Влияние / Ущерб (руб)</label>
+            <input type="number" id="risk-form-impact-cost" class="form-control" value="5000000" step="100000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Расчетный EMV (P * I / 5)</label>
+            <div id="risk-form-emv-display" style="padding: 0.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-weight: 700; color: #ef4444; font-size: 0.95rem;">
+              0 ₽
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Владелец риска (Risk Owner)</label>
+            <select id="risk-form-owner" class="form-control"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Стратегия реагирования</label>
+            <select id="risk-form-strategy" class="form-control">
+              <option value="mitigation" selected>Снижение (Mitigation)</option>
+              <option value="avoidance">Избегание (Avoidance)</option>
+              <option value="transfer">Передача (Transfer / Страхование)</option>
+              <option value="acceptance">Принятие (Acceptance)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Статус</label>
+            <select id="risk-form-status" class="form-control">
+              <option value="active" selected>Активен (В мониторинге)</option>
+              <option value="monitoring">На мониторинге</option>
+              <option value="closed">Закрыт / Нивелирован</option>
+              <option value="realized">Реализовался (Инцидент)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Триггерное событие</label>
+            <input type="text" id="risk-form-trigger" class="form-control" placeholder="Условия или события, активирующие риск...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Срок реализации мер</label>
+            <input type="date" id="risk-form-deadline" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Перечень мероприятий по митигации и план реагирования</label>
+          <textarea id="risk-form-actions" class="form-control" rows="3" placeholder="Конкретные действия, сроки и ответственные..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-delete-risk" style="margin-right: auto; display: none;">Удалить</button>
+        <button class="btn" id="btn-cancel-risk">Отмена</button>
+        <button class="btn btn-primary" id="btn-save-risk">Сохранить карточку риска</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Request Modal (CCB) -->
+  <div class="modal-overlay" id="change-request-modal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <h3 class="modal-title">Запрос на изменение базового плана (CR / CCB)</h3>
+        <button class="btn btn-sm" id="btn-close-change-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group" style="width: 140px;">
+            <label class="form-label">Код запроса</label>
+            <input type="text" id="change-form-number" class="form-control" placeholder="CR-2026/01">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Наименование изменения *</label>
+            <input type="text" id="change-form-title" class="form-control" placeholder="Краткая суть изменения...">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Инициатор изменения</label>
+            <input type="text" id="change-form-requester" class="form-control" placeholder="ФИО / Должность">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Дата подачи</label>
+            <input type="date" id="change-form-date" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">Влияние на срок (дней, +/-)</label>
+            <input type="number" id="change-form-schedule-days" class="form-control" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Влияние на бюджет (руб, +/-)</label>
+            <input type="number" id="change-form-cost-rub" class="form-control" value="0" step="10000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Статус согласования CCB</label>
+            <select id="change-form-status" class="form-control">
+              <option value="under_review" selected>На рассмотрении</option>
+              <option value="approved">Одобрено Советом CCB</option>
+              <option value="rejected">Отклонено</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Обоснование и причины необходимости изменения</label>
+            <textarea id="change-form-reason" class="form-control" rows="2" placeholder="Технические, технологические или контрактные причины..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Резолюция Совета по управлению изменениями (CCB)</label>
+            <textarea id="change-form-decision" class="form-control" rows="2" placeholder="Решение совета, источники финансирования, корректировка базового расписания..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Дата решения Совета изменений</label>
+          <input type="date" id="change-form-decided-date" class="form-control" style="width: 200px;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="btn-delete-change" style="margin-right: auto; display: none;">Удалить</button>
+        <button class="btn" id="btn-cancel-change">Отмена</button>
+        <button class="btn btn-primary" id="btn-save-change">Сохранить запрос</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Registration Modal -->
+  <div class="modal-overlay" id="user-registration-modal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="modal-title">👤 Регистрация нового пользователя</h3>
+        <button class="btn btn-sm" id="btn-close-register-modal">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 0.85rem;">
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+          Зарегистрируйте нового сотрудника в системе. Данные будут сохранены в корпоративную базу (/data/employees/) и пользователь будет выбран как активный на вашем рабочем месте.
+        </p>
+        
+        <div class="form-group">
+          <label class="form-label">ФИО сотрудника <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="register-form-name" class="form-control" placeholder="Иванов И.И." required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Должность / Роль <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="register-form-role" class="form-control" placeholder="Главный специалист" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Подразделение <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="register-form-department" class="form-control" placeholder="Отдел СМР" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="register-form-email" class="form-control" placeholder="ivanov@corp.ru">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Телефон</label>
+            <input type="text" id="register-form-phone" class="form-control" placeholder="+7 (999) 000-00-00">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ставка ФОТ (₽/час, для расчетов EVM)</label>
+          <input type="number" id="register-form-rate" class="form-control" placeholder="1500" value="1200" min="0">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btn-cancel-register">Отмена</button>
+        <button class="btn btn-primary" id="btn-save-register">Зарегистрироваться</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Scanner & Auto-Cataloging Modal -->
+  <div class="modal-overlay" id="batch-scanner-modal">
+    <div class="modal-card wide" style="max-width: 860px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔍 Пакетное сканирование входящих и автокаталогизация</h3>
+        <button class="btn btn-sm" id="btn-close-batch-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Corporate Rules Regulation Banner -->
+        <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.8rem;">
+          <div style="font-weight: 700; color: var(--accent-primary); margin-bottom: 0.35rem;">📋 Правила корпоративного регламента каталогизации:</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; color: var(--text-secondary);">
+            <div>• <b>Правило 1 (Письма):</b> Корреспонденция_переписка / [Вх/Исх] / [Организация] / [Тема_Дата]/</div>
+            <div>• <b>Правило 2 (Закупки/ТЗ):</b> Закупочная_документация / Передача_служебкой_[Дата]/</div>
+            <div>• <b>Правило 3 (Версии/Архив):</b> При обновлении файла старая версия перемещается в «Архив»</div>
+            <div>• <b>Правило 4 (Договоры/ДС):</b> Договоры_и_ДС / [Организация]/ с контролем пар word+pdf</div>
+          </div>
+        </div>
+
+        <!-- Folder Selection Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span style="font-size: 1.5rem;">📥</span>
+            <div>
+              <b id="batch-selected-folder-name">Входящая папка: Не выбрана</b>
+              <div id="batch-queue-count-info" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;"></div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" id="btn-select-batch-folder">
+            📂 Выбрать входящую папку
+          </button>
+        </div>
+
+        <!-- Progress Container -->
+        <div style="margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem;">
+            <span id="batch-overall-status-text">Готов к сканированию</span>
+          </div>
+          <div class="ocr-progress-container" style="height: 10px; margin: 0;">
+            <div class="ocr-progress-fill" id="batch-overall-progress" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Files Queue List -->
+        <div id="batch-files-queue-list" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-primary);"></div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="btn-cancel-batch-modal">Закрыть</button>
+        <button class="btn btn-primary" id="btn-start-batch-scan" disabled>
+          🚀 Запустить автокаталогизацию по регламенту
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Local Offline Vendor Libraries -->
+  <script src="./vendor/xlsx.full.min.js"></script>
+  <script src="./vendor/pizzip.min.js"></script>
+  <script src="./vendor/docxtemplater.js"></script>
+  <script src="./vendor/tesseract/tesseract.min.js"></script>
+  <script src="./vendor/pdf-lib.min.js"></script>
+  <script src="./vendor/pdf.min.js"></script>
+
+  <!-- Application JavaScript Modules -->
+  <script src="./js/storage.js"></script>
+  <script src="./js/tasks.js"></script>
+  <script src="./js/calendar.js"></script>
+  <script src="./js/gantt.js"></script>
+  <script src="./js/contracts.js"></script>
+  <script src="./js/employees.js"></script>
+  <script src="./js/directory.js"></script>
+  <script src="./js/invest.js"></script>
+  <script src="./js/risks.js"></script>
+  <script src="./js/evm_advanced.js"></script>
+  <script src="./js/documents.js"></script>
+  <script src="./js/ocr.js"></script>
+  <script src="./js/pdfstudio.js"></script>
+  <script src="./js/cad_viewer.js"></script>
+  <script src="./js/calculators.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

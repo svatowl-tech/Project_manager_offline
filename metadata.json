@@ -1,0 +1,6 @@
+{
+  "name": "Система Управления Руководителя (SMB Offline)",
+  "description": "Автономное корпоративное рабочее место руководителя направления для Windows и Astra Linux: справочники внешних предприятий и сотрудников, генератор писем и протоколов, раздельные папки БД и Библиотеки, автокаталогизация, Канбан, Гант (MS Project), Договоры, Word/Excel генератор, оффлайн OCR, PDF Студия и CAD/Visio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
