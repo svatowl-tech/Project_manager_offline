@@ -394,7 +394,9 @@ class App {
       case 'evm':
         if (window.evmAdvancedModule) window.evmAdvancedModule.render();
         break;
-      case 'calculators': break;
+      case 'calculators':
+        if (window.calculatorsModule) window.calculatorsModule.render();
+        break;
     }
   }
 
